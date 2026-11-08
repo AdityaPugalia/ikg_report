@@ -1,0 +1,35 @@
+\section{What is new against existing work}
+\label{sec:novelty}
+
+Table~\ref{tab:compare} places the system against the families of work it touches, on the four decisions of Section~\ref{sec:idea}. The literature was searched for each; the paragraphs below give the nearest precedents and the exact difference.
+
+\begin{table}[h]
+\centering\footnotesize
+\caption{The four design decisions against the nearest existing work. ``Facts fixed at ingest'' means the document is turned into facts or triples once, before any question is seen.}
+\label{tab:compare}
+\setlength{\tabcolsep}{4pt}\begin{tabular}{@{}>{\raggedright\arraybackslash}p{33mm}>{\raggedright\arraybackslash}p{27mm}>{\raggedright\arraybackslash}p{25mm}>{\raggedright\arraybackslash}p{16mm}>{\raggedright\arraybackslash}p{23mm}>{\raggedright\arraybackslash}p{30mm}@{}}
+\toprule
+ & relations are & formula comes from & facts fixed at ingest & cited number checked in code & where-to-look knowledge \\
+\midrule
+GraphRAG, LightRAG, financial KG-RAG~\citep{edge2024graphrag,guo2024lightrag,shah2024multidoc,arun2025finreflectkg} & binary triples written by a model & the model & yes & no & none \\
+FIBO; XBRL calculation linkbase~\citep{bennett2013fibo,xbrl2003spec} & classes and properties; signed sums within one context & --- & --- & --- & none \\
+Program-of-thought QA: FinQA line, TAT-LLM, FINDER~\citep{chen2021finqa,khatuya2025finder} & --- & the model writes the program & gold table given & executed, not checked against the page & none \\
+Formula retrieval: FinanceReasoning~\citep{tang2025financereasoning}; VeriFin~\citep{hall2026verifin} & Python functions by similarity; a provenance order over sources & retrieved; VeriFin verifies another system's answer with Z3 over XBRL facts & --- & VeriFin: yes, against XBRL facts & none \\
+Structure-aware retrieval: PageIndex, HC-RAG, FinGEAR, HiREC~\citep{vectify2026mafin,chen2026hcrag,li2025fingear,choe2025hirec} & --- & the model & no & no & the Item hierarchy as a lexicon or tree, not measured \\
+\midrule
+\textbf{this project} & \(n\)-ary equation nodes, canonical \(f=0\), solvable for any variable; admitted only when filings confirm them & the graph; a model's definition only when the graph has none, recorded as an assumption & no: text and tables stored whole & yes: quote, row, sign and unit words, before use & measured over 32,288 filings; decides search vs derive and where to start \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Relations as solvable nodes.}
+Graph-based retrieval systems, GraphRAG and LightRAG and the financial knowledge graphs built on 10-Ks and news~\citep{edge2024graphrag,guo2024lightrag,shah2024multidoc,arun2025finreflectkg}, extract binary triples with a model at index time and hand them to the generator as context; the surveys of the field describe no design in which a node owns an executable body. On filings they do not help much: FinSage measured GraphRAG at 42.5\% and LightRAG at 13.7\% on its filings questions against its own 82.7\%~\citep{wang2025finsage}. The financial ontologies hold classes and properties with no arithmetic~\citep{bennett2013fibo}; the XBRL calculation linkbase holds signed sums within one reporting context, no ratios and no roll-forwards~\citep{xbrl2003spec}, and we use its 6,514 arcs only as candidates that must still be observed to hold. Hoffman's impute rules~\citep{hoffman2017theory} derive an unreported fact from reported ones, but are hand-authored, directional and tied to a reporting style. The closest design to our equation node is Wolfram's \code{FormulaData}~\citep{wolfram_formuladata}, a curated library of named formulas solvable for any variable; it is fixed, has no finance coverage and no admission test against data. We found no prior graph whose relations are \(n\)-ary equations admitted by measurement over filings.
+
+\paragraph{The formula from a verified graph, not the model.}
+The program-of-thought line that dominates numerical financial QA (FinQA, TAT-QA, ELASTIC, APOLLO, FINDER, TAT-LLM; best FinQA execution accuracy 75.3\% against 92.3\% human~\citep{chen2021finqa,khatuya2025finder}) has the model write the program, executes it, and never looks the formula up or checks it; the datasets also hand over the one gold table. Two 2025--26 works move the formula out of the model. FinanceReasoning retrieves the three nearest of 3,133 Python functions by embedding similarity and finds that this beats passage retrieval (GPT-4o 83.2 to 91.6\%)~\citep{tang2025financereasoning}, but the functions are unverified snippets and there is no document, no citation check and no prior on where a quantity is printed. VeriFin~\citep{hall2026verifin} is a verifier rather than an answerer: it grounds operands in XBRL facts, checks another system's answer with an SMT solver and abstains otherwise, under a strict order of formula authority in which a model is never a source; on a 67-question numeric subset of FinanceBench it accepts 70\% of answers at 86.7\% accuracy. It therefore covers only XBRL-tagged quantities and works after the fact. Our graph admits a formula by filing-wide statistical verification rather than by provenance class, produces the answer from the document text, and chooses between searching and deriving from measured chances.
+
+\paragraph{Read at question time, checked in code.}
+Every knowledge-graph system above commits to its facts at ingest, which is the failure Table~\ref{tab:commitment} measures. Grounding work in finance adds a traceability layer to a production assistant~\citep{kabra2026verifiable} or benchmarks claim verification over long documents; none checks, before a number is used, that the model's quote is printed in the cited passage and row and takes value, sign and unit from the page rather than from the model. PageIndex~\citep{vectify2026mafin}, the strongest published FinanceBench system, shares one idea with us, an index built from the document's own layout for a model to reason over, and none of the other three: its formula is the model's, nothing is recomputed and no citation is checked.
+
+\paragraph{Where to look, measured; learned pieces trained on filings' own labels.}
+Item-level routing of 10-K questions exists as a lexicon (FinGEAR~\citep{li2025fingear}), a document-then-passage hierarchy (HiREC~\citep{choe2025hirec}) or a typed evidence tree (HC-RAG~\citep{chen2026hcrag}); none estimates from data the probability that a given quantity is printed in a given part of a given kind of filing, and none uses it to decide whether to search or to derive. Inline XBRL has been used as free supervision for tagging numbers with concepts (FiNER~\citep{loukas2022finer}), not for training a retriever; we found no retriever fitted on filings' own tags, company-disjoint from every evaluation document.

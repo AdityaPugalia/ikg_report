@@ -1,13 +1,17 @@
 % Annual progress report — Intentional Knowledge Graphs
 % Compile with pdfLaTeX (Overleaf default). Bibliography: BibTeX (natbib).
-\documentclass[11pt,a4paper]{article}
+\documentclass[10pt,a4paper]{article}
 
 % ---------- page and fonts ----------
-\usepackage[a4paper,margin=25mm]{geometry}
+\usepackage[a4paper,margin=20mm]{geometry}
 \usepackage[T1]{fontenc}
 \usepackage[utf8]{inputenc}
 \usepackage{lmodern}
 \usepackage{microtype}
+\usepackage[compact]{titlesec}
+\titlespacing*{\section}{0pt}{1.6ex plus .4ex}{0.8ex}
+\titlespacing*{\subsection}{0pt}{1.2ex plus .3ex}{0.5ex}
+\setlength{\textfloatsep}{8pt plus 2pt minus 2pt}\setlength{\intextsep}{7pt plus 2pt minus 2pt}\setlength{\abovecaptionskip}{4pt}\setlength{\belowcaptionskip}{2pt}
 
 % ---------- maths, tables, lists ----------
 \usepackage{amsmath,amssymb}
@@ -55,24 +59,19 @@
 used as a prior for answering quantitative questions over financial documents\\[4mm]
 \normalsize Annual progress report}
 \author{Aditya Pugalia}
-\date{November 2026 \\[1mm] \small Period covered: May 2026 -- November 2026}
+\date{November 2026 \\[1mm] \small Period covered: May 2026 -- November 2026 \quad$\cdot$\quad Code and knowledge bases: \href{https://github.com/AdityaPugalia/Intentional-Knowledge-Graphs}{github.com/AdityaPugalia/Intentional-Knowledge-Graphs}}
 
 \begin{document}
 \maketitle
 
-\tableofcontents
-\newpage
-
 \input{sections/01_problem}
-\input{sections/02_idea}
-\input{sections/03_implementation}
+\input{sections/02_method}
+\input{sections/03_novelty}
 \input{sections/04_results}
 \input{sections/05_limitations_next}
 
-\appendix
-\input{sections/A_timeline}
-
-\bibliographystyle{plainnat}
-\bibliography{references}
+{\footnotesize\setlength{\bibsep}{1.5pt}
+\bibliographystyle{abbrvnat}
+\bibliography{references}}
 
 \end{document}
