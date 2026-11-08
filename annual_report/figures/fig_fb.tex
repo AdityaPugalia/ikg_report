@@ -1,0 +1,28 @@
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+  width=0.9\textwidth, height=58mm,
+  ybar, bar width=9pt,
+  ymin=0, ymax=100,
+  ylabel={\% of questions},
+  symbolic x coords={numeric right of 52, refusals of 150, text C of 98, text W+R of 98, overall of 150},
+  xtick=data,
+  x tick label style={font=\scriptsize,align=center,text width=24mm},
+  y tick label style={font=\scriptsize},
+  ylabel style={font=\scriptsize},
+  legend style={font=\scriptsize,at={(0.5,1.03)},anchor=south,legend columns=3,draw=none},
+  nodes near coords, nodes near coords style={font=\tiny},
+  enlarge x limits=0.14,
+  axis lines*=left, tick style={draw=none},
+  ymajorgrids, grid style={gray!25},
+]
+\addplot[fill=gray!40,draw=none] coordinates {(numeric right of 52,60) (refusals of 150,7)};
+\addplot[fill=cConnector!70,draw=none] coordinates {(numeric right of 52,83) (refusals of 150,8) (text C of 98,52) (text W+R of 98,37) (overall of 150,66)};
+\addplot[fill=cEntity!85,draw=none] coordinates {(numeric right of 52,88) (refusals of 150,3) (text C of 98,65) (text W+R of 98,20) (overall of 150,78)};
+\legend{20 Oct (first run), 2 Nov (+ source graph, bridge), 7 Nov (+ learned retriever)}
+\end{axis}
+\end{tikzpicture}
+\caption{FinanceBench, the three full runs. Higher is better for the first, third and fifth groups; lower for refusals and wrong-or-refused text. Text grades were not recorded for the first run.}
+\label{fig:fb}
+\end{figure}

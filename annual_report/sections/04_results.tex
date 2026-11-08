@@ -1,0 +1,147 @@
+\section{Results}
+\label{sec:results}
+
+Every design change in this report was made after a measurement, and most of the measurements were made on real filings with no model call. This section reports the ones that matter for judging the state of the work: the solver on textbook questions, the verification of the SEC relations, the retrieval and reading measurements on held-out filings, and three full runs over FinanceBench.
+
+\subsection{The solver on textbook questions}
+
+A benchmark of 32 end-of-chapter problems from a corporate-finance textbook (CAPM, Gordon growth, WACC, DuPont, bond pricing, Hamada, break-even) was built with gold answers computed in code. Each problem carries the book's wording and an \emph{oracle} form in the graph's own entity names, so that the solver can be measured apart from the naming problem. Table~\ref{tab:textbook} shows the progression.
+
+\begin{table}[h]
+\centering\small
+\caption{The 32-question textbook benchmark, solver only, no model calls. The oracle rows measure the graph and solver with naming taken out; the first two rows measure the whole gap.}
+\label{tab:textbook}
+\begin{tabular}{llr>{\raggedright\arraybackslash}p{72mm}}
+\toprule
+when & naming & correct & note \\
+\midrule
+Aug 2026 & the book's wording, exact match & 1/32 & no fuzzy resolution in front of the solver \\
+Aug 2026 & the book's wording, token overlap & 1/32 & name coverage 8 $\to$ 25 of 32, nothing more solved: linking to \emph{an} entity is useless unless it is the one the equation binds \\
+Aug 2026 & the graph's own names & 16/19 & all three failures are CAPM: $E[\cdot]$ as an inert function cannot be inverted; 3 time-outs at 25 s \\
+Aug 2026 & same, new solver & 16/19 & 0 time-outs, solved items $\le 0.3$ s; CAPM gives up at the budget \\
+Sep 2026 & same, statistics as entities & \textbf{19/19} & CAPM solves in $\le 1$ s; the whole run 7 s instead of 48 s \\
+Oct 2026 & same, after repairs and merges & \textbf{19/19} & three probes renamed to the corrected entities \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Two lessons were general. First, the substrate was sound from the start: every law probed was present and correctly formed and solved instantly once addressed by its name. Second, the naming gap is a \emph{disambiguation} problem, not a threshold problem: of 76 oracle names probed, only 5 had a single candidate entity (``present value'' competed with 21). That finding is what later made ``map words to one entity, by a model shown the definitions, every time'' the rule, and what motivated the entity repairs and merges of October.
+
+\subsection{Relations verified against filings}
+
+Table~\ref{tab:verify} gives the admission rates of representative relations in the SEC concept graph. The numbers are the fraction of annual filings reporting all operands on which the relation holds within 0.5\%. They are reported here because they are the evidence that the graph's relations are true of real documents and not only of textbooks, and because the refusals are as informative as the admissions.
+
+\begin{table}[h]
+\centering\small
+\caption{Verification of relations against the SEC numeric data (five quarters, 4.6M consolidated values). A relation below 0.5 is refused, 0.5--0.7 admitted as empirical, above as identity.}
+\label{tab:verify}
+\begin{tabular}{>{\raggedright\arraybackslash}p{88mm}lr}
+\toprule
+relation & kind & holds in \\
+\midrule
+assets $=$ liabilities $+$ equity & identity & 99.9\% \\
+cash reconciliation (beginning $+$ change $=$ ending) & identity & 99\% \\
+gross profit $=$ revenue $-$ cost of revenue & identity & 98.6\% \\
+cash roll-forward through the cash-flow statement & identity & 98\% \\
+current ratio $=$ current assets / current liabilities & identity (definition) & solves out of the box \\
+subtotals (assets, liabilities, current assets, equity, investing and financing cash flow) & aggregation & 91--97\% of filings explained \\
+working-capital roll-forwards through cash-flow lines & empirical & 35--60\% \\
+IFRS operating-cash-flow reconciliation & aggregation & 72\% (US GAAP: 37\%) \\
+pre-tax income $=$ operating income $-$ interest expense $+$ other & \emph{refused} & 36\% \\
+treasury-stock roll-forwards & \emph{dropped} & $\approx 50\%$ (half of filers reissue) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{The graph as a store: the measured failure}
+
+The graph-as-store path was run twice end to end on a real combined 10-K from DocFinQA~\citep{reddy2024docfinqa} and answered 0 of 11 questions both times; its per-decision accuracies are in Table~\ref{tab:commitment}. A hand audit of 25 random extracted facts against their source rows found 9 wrong before fixes and 6 after, and an automated pass over 9,433 facts flagged 18\% with a verified fact-to-row mapping; the best estimate was that about one fact in four carried at least one wrong label. The model-based table reader that replaced the code reader improved every coordinate (facts with no period 46\% $\to$ 19\%, with no company 52\% $\to$ 16\%) and still answered nothing, because 31\% of linked cells held more than one distinct value and the question that would have told them apart was not available at ingest. This is the measurement behind the change of direction.
+
+\subsection{Retrieval on held-out filings}
+
+Table~\ref{tab:retrieval} reports the learned retriever on 5,063 needs from companies never used in the fit, with the hand-ordered ladder on the same needs. The right chunk is known from the filing's own inline-XBRL tags; no benchmark question is involved.
+
+\begin{table}[h]
+\centering\small
+\caption{Retrieval on 5,063 held-out needs (3,985 printed, 1,078 not printed) from 2025 EDGAR filings of companies excluded from training. Recall@$k$: the labelled chunk is among the first $k$ served.}
+\label{tab:retrieval}
+\begin{tabular}{lrrrrr}
+\toprule
+ & recall@1 & recall@5 & recall@9 & MRR & ``not printed'' AUC \\
+\midrule
+learned scorer (v3), all signals & \textbf{0.596} & \textbf{0.882} & \textbf{0.927} & \textbf{0.721} & 0.817 \\
+\quad numeric needs (3,062) & & 0.912 & & & \\
+\quad text needs (923) & & 0.780 & & & \\
+\quad without words & 0.354 & 0.732 & & 0.518 & 0.666 \\
+\quad without meaning & 0.581 & 0.857 & & 0.702 & 0.794 \\
+\quad without place (bridge, part tag) & 0.589 & 0.876 & & 0.714 & 0.818 \\
+\quad words only & 0.535 & 0.806 & & 0.654 & 0.801 \\
+\midrule
+ladder (v2), first call (mean 6.4 passages) & & 0.704 & & & \\
+ladder (v2), with a second call & & 0.774 & & & \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The ablations say where the gain comes from: the words are indispensable, the meaning vector adds 2.5 points of recall@5 and the count of numbers printed is the largest single weight, while the bridge's share is statistically significant but small, because it rarely separates chunks \emph{within} one document (its value is in deciding whether to search at all and where to start). Calibration of the served probability mass against hit rate reduced the log loss from 0.446 to 0.429 on the check half and brought every bin within four points.
+
+\subsection{The reader}
+
+The remaining number the loop needs is how often the model, shown the right chunk, cites the right cell. Five hundred single reads were run with the finder's own prompt over held-out needs (Table~\ref{tab:reader}). The misses on numbers are mostly the model asking for another period or a total the shown tables do not have; ``absent'' is almost never said (2 of 300); the rejections are almost all a dash cell cited as zero, which the grounding refuses. When the target was \emph{not} served the model nonetheless cited something 28\% of the time, a wrong value 12\% of the time, which is the rate at which a find against a low retrieval chance must be doubted.
+
+\begin{table}[h]
+\centering\small
+\caption{Single reads with the finder's prompt, 500 needs of held-out companies, 10-K rows (10-Q rows were affected by a harness error in the coordinate and are not reported).}
+\label{tab:reader}
+\begin{tabular}{llrrrrr}
+\toprule
+stratum & kind & $n$ & cited right & right value anywhere & missed & cited a wrong value \\
+\midrule
+number, right chunk served & 10-K & 134 & 69\% & 79\% & 10\% & 1\% \\
+text, right chunk served & 10-K & 44 & 75\% & 75\% & 25\% & 0\% \\
+number, right chunk not served & 10-K & 43 & 7\% & 23\% & 56\% & 12\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{FinanceBench, three full runs}
+
+FinanceBench~\citep{islam2023financebench} has 150 questions over 84 SEC filings and earnings releases (10-K, 10-Q, 8-K, releases; 12,013 pages), every question naming its company and period, with an evidence page and a gold answer. All 84 documents were parsed and ingested (84 heading outlines, 1,673 headings linked to parts). The system is given the question only; it chooses the document. 52 gold answers are a bare number and are scored in code (within tolerance, or rounding to the gold at the decimals it prints); the other 98 are sentences and were judged by reading against the gold on a four-point scale (C matches, P partly, W wrong or a non-answer where the gold answers, R refused), with the judgement file kept question by question. Table~\ref{tab:fb} and Figure~\ref{fig:fb} give the three runs.
+
+\begin{table}[h]
+\centering\small
+\caption{Three runs of the version-4 loop over all 150 FinanceBench questions. Text grades from the hand judgement; ``overall'' counts a numeric hit as 1, C as 1 and P as $\tfrac{1}{2}$. Refusals count as wrong everywhere.}
+\label{tab:fb}
+\begin{tabular}{l*{3}{>{\centering\arraybackslash}p{31mm}}}
+\toprule
+ & 20 Oct 2026 & 2 Nov 2026 & 7 Nov 2026 \\
+\midrule
+what changed before the run & first full run & source graph, bridge, covers re-read & learned retriever v3, calibrations \\
+\midrule
+numeric right (of 52) & 31 (60\%) & 43 (83\%) & \textbf{46 (88\%)} \\
+text: C / P / W / R (of 98) & --- & 51 / 11 / 25 / 11 & \textbf{64 / 14 / 17 / 3} \\
+refusals (of 150) & 10 & 12 & \textbf{4} \\
+best-effort flags & --- & 41 & 26 \\
+overall (of 150) & --- & 99.5 (66\%) & \textbf{117 (78\%)} \\
+strict agreement with the gold, no rounding tolerance & --- & 94 (62.7\%) & 110 (73.3\%) \\
+\midrule
+model calls, total & 2,791 & 2,275 & 2,210 \\
+model calls per question, median & 12.5 & 9 & 9 \\
+seconds per question, median & --- & 30 & 20 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\input{figures/fig_fb}
+
+Between the first and second runs, 17 of the 21 numeric misses were traced to six causes and fixed in code (outflows printed in brackets used with their sign; a ratio returned $\times 100$ when no percent was asked; ``X as a \% of revenue'' kept as one target; a filer name not matching its legal form; a 10-Q's quarter read off the calendar month) and the source graph, the bridge and the re-read covers went in. Between the second and third, the learned retriever replaced the ladder. The finder's decisions did \emph{not} change in kind between those two runs (search again 42\% of reads, found 33\%, widen 18\%, absent 1\%); the better retrieval shows in the answers rather than in fewer re-searches.
+
+\paragraph{What is still wrong, and why.}
+The three numeric misses that are new in the last run are not retrieval. One identity was solved the wrong way round, so a derived net profit was recorded as a margin; one input was ``derived'' from 2 of a subtotal's 10 parts because the task cap stopped the search (the aggregation rule has no coverage floor, a gap known since September and the one thing the planned value rule replaces); and one question defined its ratio over \emph{average} inventory while the graph's identity uses ending inventory (a question's own definition must beat the graph's). The four refusals are a figure that sits in an 8-K's exhibit, a passage read but judged not to answer, and a quantity found in a note and in the cash-flow statement while the question asked for the income-statement line. Of the 17 wrong text answers, 6 are a verdict against the gold on a judgement call, 5 a wrong figure or sign, 4 a ``cannot determine'' where the gold has a value and 2 a figure not carried into the text. One text answer was given from the wrong company's filing, a document-choice error.
+
+\paragraph{Against a published system.}
+The one published system with per-question results on the same 150 questions is PageIndex (Mafin 2.5), a layout-tree index reasoned over by a model. Its authors report 136 of 150 answers ``aligned'' with the gold with rounding tolerated and 148 of 150 after adjudicating twelve golds as wrong or ambiguous. Set beside like, the 2 November run scores 97/150 (64.7\%) on the first ruler and 105/150 (70.0\%) under their rule applied by hand; the 7 November run's strict figure is 110/150 (73.3\%). The gap under any ruler is refusals (a refusal is wrong under every judge, and their run refuses nothing) and partial text answers (subsets of a list, which their superset rule does not accept). The one structural idea the two systems share, an index built from the document's own layout for a model to reason over rather than embeddings alone, is the part of their claim these results support; where this system differs is that every cited figure is checked in code against the printed cell, every derived value is recomputed from the graph's equation, and the formula is the graph's and not the model's.
+
+\subsection{Cost}
+
+Ingesting a filing costs two model calls and embeddings, about 30 seconds and \$0.15--0.30, with tables stored whole and never read by a model at ingest. Answering costs a median of 9 calls per question and 20 seconds; the whole 150-question run takes about two hours four questions at a time. Building the knowledge bases cost nothing at the model: the SEC relations were measured, the bridge counted, the retriever fitted on filings' own tags; the paid calls were the extraction of textbook equations (one per equation, in the first weeks) and the authoring and review agents of August and October.

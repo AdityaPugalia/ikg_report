@@ -1,0 +1,37 @@
+\begin{figure}[t]
+\centering
+\fitwidth{\begin{tikzpicture}[
+  >=Stealth,
+  ent/.style={circle,draw=cEntity,fill=cEntity!12,thick,minimum size=9mm,font=\scriptsize,align=center,inner sep=1pt},
+  con/.style={rectangle,draw=cConnector,fill=cConnector!15,thick,rounded corners=1pt,minimum width=36mm,minimum height=11mm,font=\scriptsize,align=center,inner sep=3pt},
+  lab/.style={font=\scriptsize\ttfamily,fill=white,inner sep=1pt},
+  every edge/.style={draw,thick,gray!70}
+]
+% ---------- CAPM ----------
+\node[con] (capm) at (0,0) {\textbf{equation} \\ $E_{R_i} - R_f - \beta_i\,(E_{R_m} - R_f) = 0$ \\ solvable for every symbol};
+\node[ent,above left=11mm and 14mm of capm] (eri) {expected\\return\\of asset $i$};
+\node[ent,above right=11mm and 14mm of capm] (rf) {risk-free\\rate};
+\node[ent,below left=11mm and 14mm of capm] (beta) {beta of\\asset $i$};
+\node[ent,below right=11mm and 14mm of capm] (erm) {expected\\market\\return};
+\path (eri) edge node[lab,pos=.45]{E\_R\_i} (capm);
+\path (rf) edge node[lab,pos=.45]{R\_f} (capm);
+\path (beta) edge node[lab,pos=.45]{beta\_i} (capm);
+\path (erm) edge node[lab,pos=.45]{E\_R\_m} (capm);
+\node[font=\scriptsize,gray,align=center,below=18mm of capm] {$R_f$ appears twice in the body but is \emph{one} binding, one edge.\\ The realised return of asset $i$ is a different entity, which this equation does not touch.};
+
+% ---------- connector referencing connector ----------
+\begin{scope}[xshift=88mm]
+\node[con] (d1) at (0,-14mm) {\textbf{equation} \texttt{d1\_def} \\ $d_1 - \dfrac{\ln(S/K)+(r+\sigma^2/2)T}{\sigma\sqrt T} = 0$};
+\node[con] (bs) at (0,14mm) {\textbf{equation} \texttt{bs\_price} \\ $C - S\,\Phi(d_1) + K e^{-rT}\Phi(d_1-\sigma\sqrt T) = 0$};
+\node[ent,left=9mm of d1] (S) {spot\\price $S$};
+\node[ent,right=9mm of d1] (sig) {volatility\\$\sigma$};
+\node[ent,left=9mm of bs] (C) {call\\price $C$};
+\node[ent,right=9mm of bs] (K) {strike\\$K$};
+\path (S) edge (d1); \path (sig) edge (d1); \path (C) edge (bs); \path (K) edge (bs);
+\path (bs) edge[dashed,cConnector,very thick] node[lab,right=1pt,pos=.5]{d1 $\to$ \texttt{NodeRef(d1\_def)}} (d1);
+\node[font=\scriptsize,gray,align=center,below=4mm of d1] {A connector may bind a symbol to another connector (dashed):\\ the graph is bipartite in spirit, not strictly.};
+\end{scope}
+\end{tikzpicture}}
+\caption{The entity--connector graph. Left: CAPM as one equation connector (orange) bound to four entity nodes (blue) by undirected edges carrying the local symbol. The expected returns are entities in their own right; no edge or expression applies $E[\cdot]$. Right: a connector referencing another connector, the $d_1$ definition used inside the Black--Scholes call price. $r$ and $T$ are omitted from the drawing for space.}
+\label{fig:capm}
+\end{figure}

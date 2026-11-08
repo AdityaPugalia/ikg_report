@@ -1,0 +1,83 @@
+% Annual progress report — Intentional Knowledge Graphs
+% Compile with pdfLaTeX (Overleaf default). Bibliography: BibTeX (natbib).
+\documentclass[11pt,a4paper]{article}
+
+% ---------- page and fonts ----------
+\usepackage[a4paper,margin=25mm]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+
+% ---------- maths, tables, lists ----------
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{multirow}
+\usepackage{enumitem}
+\setlist{nosep,leftmargin=*}
+\usepackage{caption}
+\captionsetup{font=small,labelfont=bf}
+\usepackage{subcaption}
+
+% ---------- figures ----------
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{positioning,arrows.meta,shapes.geometric,fit,calc,backgrounds,decorations.pathreplacing}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+
+% ---------- colours used in every diagram ----------
+\definecolor{cEntity}{HTML}{3B6EA8}     % entity nodes: blue
+\definecolor{cConnector}{HTML}{D9822B}  % connector nodes: orange
+\definecolor{cDoc}{HTML}{5B8C5A}        % document / text side: green
+\definecolor{cModel}{HTML}{A23B72}      % a model call: plum
+\definecolor{cCode}{HTML}{4A4A4A}       % deterministic code: grey
+\definecolor{cStore}{HTML}{8A7E5A}      % storage: khaki
+\definecolor{cLight}{HTML}{F4F4F4}
+
+% ---------- links and references ----------
+\usepackage[numbers,sort&compress]{natbib}
+\usepackage[colorlinks=true,linkcolor=cEntity,citecolor=cDoc,urlcolor=cEntity]{hyperref}
+
+% ---------- small helpers ----------
+\newcommand{\code}[1]{\texttt{#1}}
+\newcommand{\termdef}[1]{\textbf{#1}}
+\newcommand{\eg}{e.g.\ }
+\newcommand{\ie}{i.e.\ }
+% shrink a diagram only when it exceeds the text block
+\newcommand{\fitwidth}[1]{\resizebox{\ifdim\width>\textwidth\textwidth\else\width\fi}{!}{#1}}
+\newcommand{\fitheight}[1]{\resizebox{!}{\ifdim\height>0.86\textheight 0.86\textheight\else\height\fi}{#1}}
+
+\title{\textbf{Intentional Knowledge Graphs}\\[2mm]
+\large A knowledge graph of financial quantities and the equations that relate them,\\
+used as a prior for answering quantitative questions over financial documents\\[4mm]
+\normalsize Annual progress report}
+\author{Aditya Pugalia}
+\date{November 2026 \\[1mm] \small Period covered: May 2026 -- November 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+\noindent
+Most knowledge in quantitative finance is, structurally, a system of equations over typed quantities: returns, prices, balance-sheet items, rates. This project builds that knowledge into an explicit, machine-readable form and uses it to answer quantitative questions over financial documents. The first contribution is a graph in which the \emph{relations} are first-class nodes: each equation is stored in canonical \(f(\cdot)=0\) form with a symbolic body, so that any of its variables can be the target of a query and a solver can chain equations to reach a quantity a document never prints. The second contribution came from a measured failure: when the graph was used as the \emph{store} of extracted facts, every decision taken at ingestion (which concept, which company, which period) was made once, blind to the question, and the errors multiplied to a success rate near zero. The system was therefore redesigned so that the graph is a \emph{prior}: documents are stored as text and read at question time, with every cited figure checked in code against the printed page, while the graph decides which formula to use, which inputs it needs, and, through two further knowledge bases built this year (a graph of document kinds and their parts, and a measured ``bridge'' saying where each quantity is printed and how often), where in a document to look. A learned retriever trained on filings that label themselves (inline XBRL), never on benchmark data, replaced a hand-ordered search. On the 150 FinanceBench questions the full system now answers 46 of 52 numeric questions correctly (88\%, from 60\% at the first run), refuses 4 (from 12), and scores 78\% overall with text answers judged against the gold; on a 32-question textbook benchmark the solver answers 19 of 19 once the question is phrased in the graph's vocabulary. The report sets out the problem, the idea and its intuition, the implementation of each piece, the measurements that drove each design change, and what remains.
+\end{abstract}
+
+\tableofcontents
+\newpage
+
+\input{sections/01_problem}
+\input{sections/02_idea}
+\input{sections/03_implementation}
+\input{sections/04_results}
+\input{sections/05_limitations_next}
+
+\appendix
+\input{sections/A_timeline}
+
+\bibliographystyle{plainnat}
+\bibliography{references}
+
+\end{document}

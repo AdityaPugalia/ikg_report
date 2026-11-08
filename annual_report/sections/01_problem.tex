@@ -1,0 +1,26 @@
+\section{Problem and motivation}
+\label{sec:problem}
+
+\subsection{The task}
+
+An analyst asked ``What was Amazon's days payable outstanding in fiscal 2017?'' does three things that a language model with a search box does not do reliably. She knows the \emph{formula} (365 times average accounts payable over cost of goods sold), she knows \emph{where} each input is printed (accounts payable on the balance sheet at two year ends, cost of sales on the income statement, both in Item~8 of the 10-K), and she \emph{checks} that the numbers she copies are the ones the filing prints, in the unit the filing uses. The question-answering systems in use today retrieve passages by similarity to the question and then ask the model to reason over them~\citep{lewis2020rag}. The formula comes from the model's memory and is never checked; the numbers are whatever the model writes down; a quantity the document does not print is either made up or refused; and a question whose answer depends on two tables and a sentence in a note is answered from whichever passage happened to rank first.
+
+Financial documents make these weaknesses expensive. A 10-K runs to 150--300 pages, prints the same quantity in several places under several names and scales (``in millions'', ``in thousands''), uses brackets for negatives, splits one quantity over several accounting tags, and leaves most of the quantities an analyst wants (ratios, margins, growth rates, turnover) unprinted because they are meant to be computed. The published benchmarks show the gap plainly: on FinanceBench~\citep{islam2023financebench} the same model moves between 9\% correct with no document and 85\% when handed the exact evidence page, so almost all the difficulty is in finding and verifying the right numbers and knowing what to do with them.
+
+\subsection{Why a knowledge graph, and why not the usual one}
+
+The observation that motivates this project is that most knowledge in quantitative finance is \emph{structurally} a system of equations relating typed variables. CAPM relates an expected return to a risk-free rate, a beta and an expected market return; the balance sheet identity relates assets, liabilities and equity; a current ratio is defined over two subtotals that are themselves sums of many lines. If that knowledge were held explicitly, three things would follow:
+
+\begin{enumerate}
+\item \textbf{Any variable can be the target.} An equation stored as \(f(x_1,\dots,x_n)=0\) privileges no variable, so the same equation that gives a current ratio from current assets and liabilities gives current liabilities from the other two.
+\item \textbf{Unprinted quantities become reachable.} Chaining equations backward from a target to quantities a document prints is a search problem with a well-defined answer, and a derivation that can be audited: which equation, which inputs, which cells.
+\item \textbf{The knowledge is checkable.} Each relation can be tested against real filings before it is admitted, and each use of it can be recomputed in code.
+\end{enumerate}
+
+Existing knowledge graphs do not offer this. Property graphs and ontologies keep relations as binary labelled edges, which cannot express a four-variable equation, let alone solve it. Retrieval-oriented graphs such as GraphRAG~\citep{edge2024graphrag} build communities of entities for a model to summarise over; they are designed for retrieve-then-synthesise, not for traversal and solving. Formula libraries in the Wolfram style hold a fixed canonical set with a privileged output variable. None of them induces the relations from a corpus, and none holds them in a form a solver can run over.
+
+\subsection{What this report covers}
+
+The project began in May~2026 with the data model and the extraction of equations from textbooks. Over the year it grew into three knowledge bases and a complete question-answering system, driven at each step by measurement on real filings. Section~\ref{sec:idea} gives the idea and the intuition behind it, including the one large change of direction the year forced. Section~\ref{sec:impl} describes the implementation piece by piece. Section~\ref{sec:results} reports the results: the textbook benchmark, the verification of the SEC relations, the retrieval measurements and three full runs over FinanceBench. Section~\ref{sec:next} states the limitations and the plan for the coming months.
+
+This project is a sibling of the main thesis on multi-agent reasoning over typed primitives with backward-chained data dependencies. The thesis is about the \emph{reasoning}; this project builds the \emph{substrate} that such reasoning runs over, for the domain where the substrate is a system of equations rather than free-text facts.

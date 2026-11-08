@@ -1,0 +1,30 @@
+\section{Limitations and the plan for the coming months}
+\label{sec:next}
+
+\subsection{What the results do and do not show}
+
+The results show that a graph of verified equations, used as a prior over text that is read at question time with every citation checked, answers 88\% of the numeric FinanceBench questions and 78\% overall, that the graph's solver answers every textbook question once the naming is right, and that each of the pieces built this year (the source graph, the bridge, the learned retriever) produced a measured improvement when it went in. They do not yet show the claim at its strongest. FinanceBench questions name their company and period and mostly need one or two cells; the questions that the graph is \emph{for}, a quantity three equations away from anything printed, or a question over several filings, are under-represented in it, and the independent question set that the working agreements call for has not been written. Text answers are judged by reading, by me, against golds that are themselves sometimes arguable (FinanceBench's golds use three different quick-ratio formulas). And every comparison with another system is across different graders.
+
+\subsection{Known defects}
+
+\begin{itemize}
+\item \textbf{Fixed caps instead of a value rule.} The loop stops on task, depth, route and round caps. Two misses in the last run came from a cap stopping a search that would have succeeded. The three numbers a proper stopping rule needs are now in hand: the calibrated bridge chance, the calibrated retrieval chance, and the reader's measured success rate.
+\item \textbf{The aggregation rule has no coverage floor.} A total derived from 2 of 10 parts is reported with a note rather than refused.
+\item \textbf{A question's own definition does not yet beat the graph's formula.} ``Inventory turnover over average inventory'' used the graph's ending-inventory identity.
+\item \textbf{Graph quality.} Reviewers noted wrong bindings outside the repaired set, near-duplicate entities (``price change'' and ``lagged price change'' styles), and 75 groups of entities that share one pasted definition. A textbook equation mixes filing quantities with ones no filing prints (market price, required return), so a map alone unlocks an equation only when the rest is given or derived. The curated source corpus still writes \(E[\cdot]\); its loader was removed, so \code{finance\_sec.db} is now the only current form of the textbook graph.
+\item \textbf{Bridge coverage.} The 20-F rows over-predict by half because the 2025 20-F filers tag IFRS while the bridge's rows are mostly US GAAP: the bridge needs a filer-class split. Only one quarter of the Notes data set is in; releases and 8-Ks have no tags and therefore no measured rows.
+\item \textbf{Refusals.} A refusal is the design when no verified figure exists, and it is wrong under every benchmark grader. Four remain; each is a retrieval or reading failure, not an unanswerable question.
+\item \textbf{Document choice} can still land on the wrong company's filing (one case), and one fourth of the finder's reads end in ``search again''.
+\end{itemize}
+
+\subsection{Plan}
+
+\begin{enumerate}
+\item \textbf{The value rule} (next): a worth per target passed down the formula tree, one queue of open actions ranked by worth $\times$ chance $\div$ cost, where chance is the calibrated bridge share times the calibrated retrieval mass times the reader's rate, with a floor replacing the caps. Then the coverage floor on aggregations and the question's definition taking precedence over the graph's.
+\item \textbf{The independent question set}: questions written from real filings that need derivation through several equations, several documents (a 10-K and the following 10-Q, a parent and its co-registrant), and that the documents cannot answer, so that the method is measured on what it is for rather than on what the benchmarks happen to ask.
+\item \textbf{DocFinQA on its test split}~\citep{reddy2024docfinqa} (922 questions, 240 filings; its questions are FinQA's~\citep{chen2021finqa} with the table removed, so they do not name their company, and only the test split was human-validated) and the FinanceBench run repeated after each change, both with every call logged.
+\item \textbf{Graph repairs continued} by the same method as October: authored decisions applied by a refusing script, each exposed by a measurement or a reviewer; a filer-class split in the bridge; more Notes quarters.
+\item \textbf{Writing up}: the entity--connector graph and its verification against filings; the commitment measurement and the graph-as-prior design; and the data arrangement for learned pieces (fit on filings that label themselves, evaluate on benchmarks whose companies never trained anything) as a methodological contribution of its own.
+\end{enumerate}
+
+The budget agreed for this project was that it should not delay the main thesis by more than six to eight weeks. It has grown beyond that because each measurement opened a tractable next step; the substrate it has produced (a verified equation graph over the SEC vocabulary, a graph of document kinds, and a measured bridge between them) is the one the thesis's reasoning layer was always going to need, and the loop of Section~\ref{sec:impl-loop} is a first instance of backward-chained reasoning over typed primitives with data dependencies, which is the thesis's subject.

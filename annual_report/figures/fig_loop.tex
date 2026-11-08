@@ -1,0 +1,40 @@
+\begin{figure}[p]
+\centering
+\fitheight{\fitwidth{\begin{tikzpicture}[
+  >=Stealth, font=\scriptsize, node distance=3.5mm,
+  step/.style={draw,thick,rounded corners=3pt,align=center,inner sep=4pt,text width=52mm,minimum height=11mm},
+  model/.style={step,draw=cModel,fill=cModel!8},
+  code/.style={step,draw=cCode,fill=cLight},
+  kbnote/.style={draw=cConnector,thick,rounded corners=2pt,fill=cConnector!10,align=left,inner sep=3pt,text width=48mm,font=\tiny},
+  arr/.style={->,thick,gray!80},
+  back/.style={->,thick,cModel,dashed}
+]
+\node[model] (und) at (0,0) {\textbf{1 Understand} \textcolor{cModel}{[model]}\\ targets + coordinates, formula over targets, givens, unit, analysis statement};
+\node[model,below=of und] (map) {\textbf{2 Map words $\to$ entity} \textcolor{cModel}{[model]}\\ candidates by words, filer captions and meaning; a number or \emph{none}; never cached};
+\node[model,below=of map] (docs) {\textbf{3 Choose documents} \textcolor{cModel}{[model, or code when one fits]}\\ tools: search documents, company filers, list};
+\node[code,below=of docs] (dec) {\textbf{4 Search or derive?} [code]\\ calibrated chance from the bridge, nearest industry first:\\ high $\to$ search; measured 0 $\to$ formulas; unknown $\to$ search then derive};
+\node[model,below=of dec] (routes) {\textbf{5 Routes} \textcolor{cModel}{[model when several]}\\ formulas solved for the target, ranked by trust then joint chance of inputs; ancestors excluded; a definition stated by the model when the graph has none};
+\node[model,below=of routes] (find) {\textbf{6 Find} \textcolor{cModel}{[model, rounds $\le 3$]}\\ scope: the parts the bridge names; passages from the retriever; reply: found / found text / collect / widen / search / absent};
+\node[code,below=of find] (ground) {\textbf{Ground} [code]\\ quote printed in the passage and row; value and sign from the cell; unit from quoted evidence; kind of number vs kind of quantity};
+\node[code,below=of ground] (plan) {\textbf{7 Plan state} [code]\\ settle, propagate up complete routes; switch to a cheaper paused route; abandon inputs no longer needed; evidence kept in full};
+\node[model,below=of plan] (resp) {\textbf{8 Respond} \textcolor{cModel}{[model; none for a bare number]}\\ every derived value recomputed from cited inputs via the graph's equation; claims must quote evidence; may ask for more targets};
+\node[code,below=of resp] (eval) {\textbf{Evaluate} [code; model only to restate]\\ shape, unit, sign fixed; percentage points for rate differences};
+\draw[arr] (und) -- (map); \draw[arr] (map) -- (docs); \draw[arr] (docs) -- (dec); \draw[arr] (dec) -- (routes);
+\draw[arr] (dec.east) -- ++(6mm,0) |- node[pos=.25,right,font=\tiny,align=left]{search\\first} (find.east);
+\draw[arr] (routes) -- (find); \draw[arr] (find) -- (ground); \draw[arr] (ground) -- (plan); \draw[arr] (plan) -- (resp); \draw[arr] (resp) -- (eval);
+\draw[back] (ground.west) -- ++(-5mm,0) |- node[pos=.25,left,font=\tiny,align=right]{rejected:\\ re-ask once} (find.west);
+\draw[back] (plan.west) -- ++(-10mm,0) |- node[pos=.3,left,font=\tiny,align=right]{input absent:\\ expand through\\ a formula, or\\ switch route} (routes.west);
+\draw[back] (resp.west) -- ++(-15mm,0) |- node[pos=.3,left,font=\tiny,align=right]{needs:\\ new targets\\ ($\le 2$ rounds)} (map.west);
+
+% knowledge-base notes on the right
+\node[kbnote,right=12mm of map] (n1) {\textcolor{cEntity}{\textbf{concept graph}}: names, aliases, SEC concept links, filer captions, vectors};
+\node[kbnote,right=12mm of docs] (n2) {\textcolor{cDoc}{\textbf{source graph}} + company store: which stored document covers the company and period, as its own year or a comparative};
+\node[kbnote,right=12mm of dec] (n3) {\textcolor{cConnector}{\textbf{bridge}}: share of filings of this kind and industry printing the entity; in which part and statement};
+\node[kbnote,right=12mm of routes] (n4) {\textcolor{cEntity}{\textbf{concept graph}}: equations and subtotals that produce the entity, solved symbolically; trust: identity $<$ law $<$ empirical};
+\node[kbnote,right=12mm of find] (n5) {\textcolor{cConnector}{\textbf{bridge}} $\to$ parts to search first; \textcolor{cDoc}{\textbf{source graph}} $\to$ headings linked to parts; retriever v3 ranks chunks};
+\node[kbnote,right=12mm of resp] (n6) {\textcolor{cEntity}{\textbf{concept graph}}: the equation reloaded by connector id for recomputation in code};
+\foreach \a/\b in {n1/map,n2/docs,n3/dec,n4/routes,n5/find,n6/resp} {\draw[arr,gray!50] (\a.west) -- (\b.east);}
+\end{tikzpicture}}}
+\caption{The question-answering loop (version 4). Plum boxes are the points where a model is called, each with one narrow choice; grey boxes are code. Dashed arrows are the loop's backtracking paths. The notes on the right say which knowledge base each step consults.}
+\label{fig:loop}
+\end{figure}

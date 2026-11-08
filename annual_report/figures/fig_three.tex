@@ -1,0 +1,34 @@
+\begin{figure}[t]
+\centering
+\fitwidth{\begin{tikzpicture}[
+  >=Stealth, font=\small,
+  base/.style={draw,thick,rounded corners=3pt,align=left,inner sep=6pt,text width=46mm,font=\scriptsize},
+  kb/.style={base,fill=cLight},
+  title/.style={font=\small\bfseries},
+  arr/.style={->,thick,gray!80}
+]
+\node[kb,draw=cEntity] (cg) at (0,0) {%
+ \textcolor{cEntity}{\textbf{Concept graph}} --- \emph{what} and \emph{how related}\\[2pt]
+ 9{,}121 entities (4{,}474 textbook, 4{,}647 SEC)\\
+ 5{,}457 relations: 2{,}753 equations, 1{,}384 subtotals, 1{,}320 rules\\
+ 4{,}983 links entity $\leftrightarrow$ SEC concept, one entity per concept\\[2pt]
+ \emph{verified by}: arithmetic over filings; review of definitions\\
+ \emph{example}: current ratio $=$ current assets / current liabilities (identity)};
+\node[kb,draw=cDoc,right=14mm of cg] (sg) {%
+ \textcolor{cDoc}{\textbf{Source graph}} --- \emph{kinds of documents}\\[2pt]
+ 15 kinds, 150 official parts, 29 period rules, 20 relations, 4 filer classes\\
+ closed vocabulary of $\sim$13 period words\\[2pt]
+ \emph{verified by}: a quote from the official SEC text per entry; counts over 68{,}177 filings\\
+ \emph{example}: 10-K $\triangleright$ Part II $\triangleright$ Item 8 holds the statements for the fiscal year and the prior year end; a 10-Q never holds Q4};
+\node[kb,draw=cConnector,below=12mm of $(cg.south)!0.5!(sg.south)$] (br) {%
+ \textcolor{cConnector}{\textbf{Bridge}} --- \emph{where each quantity is printed, how often}\\[2pt]
+ 49{,}677 rows (concept, kind, part, statement or note, periods, count, of)\\
+ measured over 32{,}288 filings of 7 kinds from the SEC Financial Statement (and Notes) data sets; observed rows added from the system's own finds; authored rows as priors\\[2pt]
+ \emph{example}: effective tax rate $\to$ 10-K, Item 8, income-tax note, 56\% of filings; capex $\to$ cash flow statement, 61\%};
+\draw[arr] (cg.south) -- ++(0,-5mm) -| ([xshift=-12mm]br.north);
+\draw[arr] (sg.south) -- ++(0,-5mm) -| ([xshift=12mm]br.north);
+\node[font=\scriptsize,gray,align=center,below=3mm of br] {The bridge is keyed on the SEC concept (stable) and resolved to the entity through the concept links when opened.};
+\end{tikzpicture}}
+\caption{The three knowledge bases. The concept graph says what quantities exist and how they relate; the source graph says what a document of a given kind contains and for which periods; the bridge joins them by saying in which part and statement of which kind each quantity is printed, with counts. Each is verified by a different kind of evidence.}
+\label{fig:three}
+\end{figure}
