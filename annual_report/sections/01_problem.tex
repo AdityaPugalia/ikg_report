@@ -19,8 +19,4 @@ The observation that motivates this project is that most knowledge in quantitati
 
 Existing knowledge graphs do not offer this. Property graphs and ontologies keep relations as binary labelled edges, which cannot express a four-variable equation, let alone solve it. Retrieval-oriented graphs such as GraphRAG~\citep{edge2024graphrag} build communities of entities for a model to summarise over; they are designed for retrieve-then-synthesise, not for traversal and solving. Formula libraries in the Wolfram style hold a fixed canonical set with a privileged output variable. None of them induces the relations from a corpus, and none holds them in a form a solver can run over.
 
-\subsection{What this report covers}
 
-The project began in May~2026 with the data model and the extraction of equations from textbooks. Over the year it grew into three knowledge bases and a complete question-answering system, driven at each step by measurement on real filings. Section~\ref{sec:idea} gives the idea and the intuition behind it, including the one large change of direction the year forced. Section~\ref{sec:impl} describes the implementation piece by piece. Section~\ref{sec:results} reports the results: the textbook benchmark, the verification of the SEC relations, the retrieval measurements and three full runs over FinanceBench. Section~\ref{sec:next} states the limitations and the plan for the coming months.
-
-This project is a sibling of the main thesis on multi-agent reasoning over typed primitives with backward-chained data dependencies. The thesis is about the \emph{reasoning}; this project builds the \emph{substrate} that such reasoning runs over, for the domain where the substrate is a system of equations rather than free-text facts.
