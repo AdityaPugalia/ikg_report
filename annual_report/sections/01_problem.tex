@@ -2,18 +2,14 @@
 \label{sec:problem}
 
 \paragraph{The task.}
-An analyst is asked ``What was Amazon's days payable outstanding in fiscal 2017?'' and does four things: she chooses the right document, she knows the formula (365 times average accounts payable over cost of goods sold), she finds each input where the filing prints it (accounts payable at two year ends on the balance sheet, cost of sales on the income statement), and she checks that the numbers she copies are the ones printed, in the unit the filing uses. The task of this project is to do the same automatically for any quantitative question over a company's filings: choose the document, decide the formula, find and verify the inputs, compute the answer, and cite every number.
-
-\paragraph{How it is done today, and where it fails.}
-The systems in use retrieve a few passages by similarity to the question and ask a language model to reason over them~\citep{lewis2020rag}. On financial documents this fails at three points, each of which we measured.
+Answering any  questions requires doing 4 tasks: identifying the target(s) and the different inputs needed to sufficiently arrive at the target, Knowing where to find the information on the needed inputs, correctly combining them to form the answer, and validating our inputs and response against the sources and requirements of the question. 
+ On financial documents this fails at 2 points.
 
 \begin{enumerate}
-\item \textbf{Finding the right passage.} A 10-K is long (our 84 FinanceBench filings average 143 pages) and prints the same quantity in several places under several names and scales. On FinanceBench the same model answers 9\% of questions with no document and 85\% when handed the evidence page~\citep{islam2023financebench}, so most of the difficulty is in finding the page. We measured similarity search on 5,063 quantities whose location is known from the filings' own inline-XBRL tags: the right passage is among the first results 70\% of the time (Section~\ref{sec:results}).
-\item \textbf{Trusting the numbers.} The model writes down a figure whether or not it saw it. In 300 reads where the right passage was deliberately not shown, the model still cited a figure 28\% of the time, cited a wrong value 12\% of the time, and said the quantity was absent twice. Nothing in a retrieve-and-generate system checks a cited number against the printed page.
-\item \textbf{Knowing the formula and the inputs.} Most quantities an analyst asks for (ratios, margins, turnover, growth) are not printed; they are computed from inputs that are scattered. Over 14,480 annual filings, only 8 accounting tags are reported by 90\% of filers; revenue alone is split over five tags (the best single one covers 39.5\% of filings, the five together 75.8\%); the inputs of a quick ratio are all printed together in 5\% of filings; the effective tax rate appears in the income-tax note of 56\% of 10-Ks and on the face of the statements almost never. The formula itself comes from the model's memory and is never stated or checked, and definitions genuinely differ: by our reading of FinanceBench's four quick-ratio questions their gold justifications use three different formulas, a public issue on the benchmark disputes eleven golds, and the authors of the best published system on it label 5 of its 150 questions ``multiple valid approaches'' and 6 ``benchmark error''~\citep{financebench_issue7,vectify2026mafin}.
+\item \textbf{Finding the right passage -} Financial documents can be really long, for example, A 10-K is 100s of pages and prints the same quantity in several places under several names, scales, time periods, and under different contexts. This makes similarity based search ineffective for long financial documents.
+\item \textbf{Implicitly present Quantities -} Often quantities an analyst asks for (ratios, margins, turnover, growth) are not printed and have to  computed from inputs that are scattered. So a model must often decide between two things, searching for said quantities in the document or deriving it using other means.
 \end{enumerate}
 
-The three failures compound. A question that needs two inputs from two tables and a formula is answered from whichever passage ranked first, with a formula nobody sees and numbers nobody checks.
 
-\paragraph{The claim of this project.}
-Most knowledge in quantitative finance is, structurally, a system of equations over typed quantities. Held explicitly, as equations a solver can run, it answers the third failure directly (which formula, which inputs, whether an unprinted quantity can be reached from printed ones) and, joined to a record of where each quantity is printed, narrows the first. Section~\ref{sec:idea} gives the method, Section~\ref{sec:novelty} what is new in it, Sections~\ref{sec:results} and~\ref{sec:next} the results and what is still wrong.
+
+
