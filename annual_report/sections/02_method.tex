@@ -1,66 +1,53 @@
 \section{The method: what makes the system}
 \label{sec:idea}
 
-Four decisions make this system what it is. Equations are nodes of a graph that a solver can run in any direction. A relation enters the graph only when real filings confirm it. The graph is a \emph{prior} over text read at question time, not a store of extracted facts. And everything a model says is checked in code against the printed page. The engineering around these (document parsers, a plugin harness, viewers) is not described here.
-
-\subsection{Architecture overview: the graph is a prior, not a store}
+\subsection{Knowledge Graphs Overview}
 \label{sec:idea-pivot}
 
-The original design used the graph as the \emph{store}: read every table of a filing into facts, link each label to a concept, stamp company, period and unit, then look cells up and solve. Run on a real combined 10-K (seven registrants in one filing), it answered 0 of 11 questions, twice. The post-mortem measured each ingestion decision alone (Table~\ref{tab:commitment}): none was terrible, all were taken \emph{once}, blind to any question, and an answer needed every one right for every fact it touched. A model reader in place of the code reader improved every column and still answered nothing, because 31\% of linked cells held more than one distinct value, and what would have told them apart (``Entergy Texas'', ``2010 to 2011'') lives in the question.
 
-\begin{table}[h]
-\centering\small
-\caption{Accuracy of each decision taken at ingestion, measured on one combined 10-K. Each is made once with no question in view; an answer needs all of them.}
-\label{tab:commitment}
-\begin{tabular}{lr}
-\toprule
-decision & measured \\
-\midrule
-row label linked to the right concept & 79\% of facts \\
-period correct & 93\% of timed facts \\
-company correct & \(\approx\)84\% of facts carrying one \\
-cell holds exactly one distinct value & 69\% of linked cells \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-So the system was turned round. Documents are stored as text and tables, whole, with vectors; nothing is extracted; every decision is taken at question time, when the question supplies the context. The graph became a \textbf{prior}: it supplies the formula and its inputs when a quantity is not printed, the vocabulary the question's words map onto, the arithmetic (recomputed in code from cited inputs), and, through two further knowledge bases, \emph{where} to look.
 
 \label{sec:idea-three}
-Knowing where a quantity is printed needs knowledge the equation graph does not hold (Figure~\ref{fig:three}). The system therefore rests on three knowledge bases: two knowledge graphs, the \emph{equation graph} (labelled the concept graph in the figure; Section~\ref{sec:idea-graph}), which says what quantities exist and how they relate, and the \emph{source graph} (Section~\ref{sec:idea-source}), which says what a document of a given kind contains and for which periods; and the \emph{bridge} (Section~\ref{sec:idea-bridge}), which brings them together by saying where each quantity is printed. The three bases are verified by different evidence: equations by arithmetic over filings, document kinds by quotation from regulation, placement by counting.
+Solving Financial RAG requires 2 types of prior knowledge. (1) What different financial Concepts mean and how they are interconnected. (2) How are Financial document structured and what information do they contain. To Incorporate this we create a \emph{concept graph} which says what quantities exist and how they relate to each other, and a \emph{source graph} (Section~\ref{sec:idea-source}), which says what a document of a given kind contains. A \emph{bridge} (Section~\ref{sec:idea-bridge}),  brings them together by connecting the financial concepts to the document kinds. The edges represent the prior likelihood of each concept being found in a particular section of a document.
 
 \input{figures/fig_three}
 
-\subsection{The equation graph}
+\subsection{The Concept graph}
 \label{sec:idea-graph}
 
-\paragraph{Equations as nodes, solvable in any direction.}
-The graph has two classes of node (Figure~\ref{fig:capm}). \termdef{Entity nodes} are quantities (the risk-free rate, total current assets, the effective tax rate), each with a name, aliases, type and units, a plain-language definition and a vector of that text. \termdef{Connector nodes} are typed \(n\)-ary relations. An \emph{equation} stores a symbolic body in canonical \(f(x_1,\dots,x_n)=0\) form, a binding from each free symbol to an entity, the solvability of each symbol and the assumptions under which it holds. No variable is privileged, so the equation that gives a current ratio from current assets and liabilities also gives current liabilities from the other two. Two further kinds were added as the data demanded: the \emph{rule} (a stated inequality, never used to produce a value) and the \emph{aggregation} (a subtotal with a signed, weighted edge per member ever observed). Edges never join two entities; a connector may reference another connector, as the Black--Scholes price uses the definition of \(d_1\).
+The graph has two types of nodes (Figure~\ref{fig:capm}). (1) \termdef{Entity nodes} which represent financial quantities (the risk-free rate, total current assets, the effective tax rate), each with a name, aliases, type and units, a plain-language definition and a vector representation. (2) \termdef{Connector nodes} are \(n\)-ary relations which represent how different concepts interact with each other. Connector nodes can store:
+\begin{enumerate}
+    \item an \emph{equation} in canonical \(f(x_1,\dots,x_n)=0\) form where the inputs are the entities involved in the equation. t also stores the assumptions under which the equation holds
+    \item \emph{rules} which store textual information on how different entities affect each other
+    \item \emph{aggregation} (a subtotal with a signed, weighted edge per member ever observed).
+\end{enumerate}
+In the graph edges only connect to each other via connectors. A connector may reference both entities and other connectors. Connectors also have a trust level associated with them based on how likely the relation is to hold in real life.
 
 \input{figures/fig_capm}
 
-Two rules keep the bodies solvable. All algebra lives inside the expression (products, powers, repeated entities, \(\log\), \(\exp\), the normal distribution function). And \textbf{there are no statistical operators}: the expected value or variance of a quantity is a quantity of its own and so an entity of its own (``expected return of asset~\(i\)''); the parser refuses \(E[\cdot]\), because an inert function can be neither inverted nor evaluated. Before this rule 14\% of equations, every CAPM question among them, were unsolvable.
 
-The \termdef{solver} treats a target at a coordinate (company, period, segment) as an OR-node over the connectors that produce it and each connector as an AND-node over its other inputs, and searches by iterative deepening with memoised failures under two orders: \emph{trust before cost} (a derivation using only identities beats one touching an empirically fitted law, at any cost), then \emph{least data demand}. It never guesses: a unit it cannot carry or a cell holding several readings is reported, not resolved silently. Every answer is a derivation tree naming the equation, the inputs and the cells.
+To compute a target, the \termdef{solver} searches the graph as an AND/OR tree.
+A target at a coordinate (company, period, segment) is an \emph{OR-node}: it can
+be produced by any one of the connectors that produce it. Each connector is an
+\emph{AND-node}: it can be used only when all its other inputs are available, and
+each of those inputs becomes a target in turn. The solver explores this tree by
+iterative deepening and memoises failed targets so that they are not tried twice. The node expansion is done by order of trust followed by cost (the number of new inputs required to compute our target).
 
-\paragraph{A relation is admitted only when filings confirm it.}
-\label{sec:impl-concept}
-The first source of equations was textbooks, read by a layout model and one model call per equation. The second is the SEC's reporting taxonomy: 9,330 US GAAP and IFRS concepts with definitions and the 802,000 captions filers actually print for them. Those concepts had no relations, and rather than let a model invent them, \textbf{every candidate relation is measured before admission}: the SEC's numeric data (4.6 million consolidated values over five quarters) is the answer key, a candidate is evaluated over every annual filing reporting all its operands, and the builder refuses one that holds in under half of them, admits 0.5--0.7 as ``empirical'' and the rest as identities. The measurement shaped the model: a subtotal is \emph{hierarchy, not formula}, because every filer sums a different subset of lines, so it became the aggregation connector, with members recovered from each filer's own arithmetic. Textbook laws were then rebound onto the taxonomy's concepts by authoring agents with independent review, and the textbook graph's defects (wrongly defined entities, one quantity split over several, duplicate equations) were repaired by \emph{authored decision files applied by a script that refuses the whole file on any decision that does not check out}; nothing in the database is edited by hand. The result is one graph: 9,121 entities, 5,457 relations, one entity per SEC concept, a vector for every entity.
+
 
 \subsection{The source graph}
 \label{sec:idea-source}
 
-The \termdef{source graph} is the second knowledge graph. It describes kinds of documents and their official parts: a 10-K has Items 1--15 and Item~8 holds the statements, a 10-Q covers a quarter and a year to date and never a fourth quarter, an 8-K with Item~2.02 attaches an earnings release. Fifteen kinds and 150 parts are hand-authored from the official SEC texts, each entry with a verified quote, the periods a part holds written in a closed vocabulary of thirteen relative words that names 98\% of the values in 10-Ks.
+The \termdef{source graph} is the second knowledge graph. It describes kinds of documents and their official parts. For example a 10-K has Items 1--15 and Item~8 holds the statements, etc. It includes Fifteen kinds and 150 parts based on the official SEC guidelines. Each entry has a description, a verified quote, the time periods a part holds, and its vector embedding.
 
-\subsection{Bringing them together: the bridge}
+\subsection{The bridge}
 \label{sec:idea-bridge}
 
-The \termdef{bridge} is what brings the two graphs together. It says in which part, statement or note of which kind each quantity is printed, for which periods and how often, counted over 32,288 filings from the SEC's Financial Statement and Notes data sets (49,677 rows) and supplemented by what the system observes while answering. The Notes data mattered: the plain quarterly files hold only the face of the statements and find the effective tax rate in 14 filings; the bridge finds it in the income-tax note of 56\% of 10-Ks.
+The \termdef{bridge} contains the likelihood of finding concepts in any part of a document. It says in which part, statement or note of which kind each quantity is printed and for which time periods. The likelihood is computed using 32,288 random filings from the SEC's Financial Statement and Notes data sets by counting the appearances of each concept in those filings. 
 
-\subsection{Question time: a model at narrow choices, code checks everything}
+\subsection{Agent Reasoning Loop}
 \label{sec:impl-loop}
 
-Figure~\ref{fig:loop} shows the loop; a model is called at eight points, each with one narrow choice, and everything between is code. (1)~\emph{Understand}: one call over the question alone returns the targets as named with their coordinates, a formula over targets only when the question spells one out, the givens, the unit asked and an analysis statement when something is to be judged; ``quick ratio'' is one target and the graph decides its parts. (2)~\emph{Map}: each target's words go to one entity or none, from candidates by name, by the captions filers print for a concept and by vector, shown with their definitions; nothing is cached, because a judgement made in one question's context has selected the wrong entity in another. (3)~\emph{Choose documents} through tools over the stored covers, the source graph's periods (a prior year held as a comparative ranks below the document's own year and says so) and a company store of 16,416 filers and their co-registrants; when one document fits, code chooses. (4)~\emph{Search or derive}, decided in code from the bridge's calibrated chance that a filing of this kind and industry prints the entity: high, search; measured zero, formulas first; unknown, search and derive on a miss. (5)~\emph{Routes}: the relations that produce the entity, solved symbolically, ranked by trust and then by the joint chance of their inputs, counted in sequence because findings are strongly linked (current liabilities is reported by 98.8\% of filers reporting current assets and 3.9\% of the others). (6)~\emph{Find}: in the parts the bridge names first, then the whole document, the model reads whole tables with the chunks around them and replies found, found text, collect, widen, search again or absent. (7)~\emph{Plan}: the state is the memory; a found input propagates up every complete route, a failed route activates the cheapest paused one. (8)~\emph{Respond and evaluate}: every derived value is recomputed in code from its cited inputs through the equation reloaded from the graph; a bare-number question is answered with no model call; otherwise one call writes the answer with claims that must quote the evidence, and code fixes shape, unit and sign.
+Figure~\ref{fig:loop} shows the Agent loop; To answer a question a model is called at eight points different points to do the following tasks. (1)~\emph{Understand}: one call over the question alone returns the targets as named with their coordinates, a formula over targets only when the question spells one out, the informations given in the question, the units asked for and an analysis flag when something is to be judged. (2)~\emph{Map}: each target's words go to one entity or none, from candidates by name, by the captions filers print for a concept and by vector similarity search, shown with their definitions. (3)~\emph{Choose documents} through tools over the stored covers, the source graph's periods (a prior year held as a comparative ranks below the document's own year and says so) and a company store of 16,416 filers and their co-registrants; when one document fits, code chooses. (4)~\emph{Search or derive}, decided in code from the bridge's calibrated chance that a filing of this kind and industry prints the entity: high, search; measured zero, formulas first; unknown, search and derive on a miss. (5)~\emph{Routes}: the relations that produce the entity, solved symbolically, ranked by trust and then by the joint chance of their inputs, counted in sequence because findings are strongly linked (current liabilities is reported by 98.8\% of filers reporting current assets and 3.9\% of the others). (6)~\emph{Find}: in the parts the bridge names first, then the whole document, the model reads whole tables with the chunks around them and replies found, found text, collect, widen, search again or absent. (7)~\emph{Plan}: the state is the memory; a found input propagates up every complete route, a failed route activates the cheapest paused one. (8)~\emph{Respond and evaluate}: every derived value is recomputed in code from its cited inputs through the equation reloaded from the graph; a bare-number question is answered with no model call; otherwise one call writes the answer with claims that must quote the evidence, and code fixes shape, unit and sign.
 
 \input{figures/fig_loop}
 
