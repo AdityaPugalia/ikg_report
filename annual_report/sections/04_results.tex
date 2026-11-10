@@ -25,11 +25,11 @@ model calls, total / median per question & 2,210 / 9 \\
 \end{tabular}
 \end{table}
 
-Table~\ref{tab:published} sets this run beside the results published on the same 150 questions. The systems were not graded in the same way, so the table says how each was graded. The benchmark's own baselines were hand-graded by its authors. PageIndex uses a judge model whose prompt accepts rounding, supersets and ``reasonable interpretations'', and it adjudicates twelve golds as wrong or ambiguous. Our numbers come from strict scoring in code and grading by hand, with refusals counted as wrong. The golds themselves are not entirely reliable and 11 gold answers are disputed~\citep{financebench_issue7}. Accounting for this along with other reasonable judgment based alternatives for textual answers would lead to higher scores on the benchmark
+Table~\ref{tab:published} sets this run beside the results published on the same 150 questions. The systems were not graded in the same way, so the table says how each was graded. The benchmark's own baselines were hand-graded by its authors. PageIndex uses a judge model whose prompt accepts rounding, supersets and ``reasonable interpretations'', and it adjudicates twelve golds as wrong or ambiguous. The system's numbers come from strict scoring in code and grading by hand, with refusals counted as wrong. The golds themselves are not entirely reliable and 11 gold answers are disputed~\citep{financebench_issue7}. Accounting for this along with other reasonable judgment based alternatives for textual answers would lead to higher scores on the benchmark
 
 \begin{table}[h]
 \centering\footnotesize
-\caption{FinanceBench, the 150 public questions: published results and ours, with how each was graded.}
+\caption{FinanceBench, the 150 public questions: published results and those of this project, with how each was graded.}
 \label{tab:published}
 \begin{tabular}{@{}>{\raggedright\arraybackslash}p{62mm}r>{\raggedright\arraybackslash}p{70mm}@{}}
 \toprule
@@ -52,4 +52,4 @@ this project, 7 Nov 2026 & 73\% / 78\% & strict agreement with the gold as writt
 
 \subsection{Multi-Doc-2025}
 
-Multi-Doc-2025~\citep{chen2026hcrag} has 2,327 questions over 179 10-K filings in five subsets, two of which need more than one document. The latest run gave an 82\% accuracy on the benchmark. The textual answers were judged correct when no incorrect information is mentioned  and the facts that answer the question are present in the answer or its account. A gold that says the filing ``does not disclose'' something is overridden when our verified quote shows that it does. This happens because the benchmark questions was created using excerpts. Hence, it is likely that an answer which was not present in the excerpt the question was created using is present elsewhere in the other documents.
+Multi-Doc-2025~\citep{chen2026hcrag} has 2,327 questions over 179 10-K filings in five subsets, two of which need more than one document. The latest run gave an 82\% accuracy on the benchmark. The textual answers were judged correct when no incorrect information is mentioned  and the facts that answer the question are present in the answer or its account. A gold that says the filing ``does not disclose'' something is overridden when the system's verified quote shows that it does. This happens because the benchmark questions was created using excerpts. Hence, it is likely that an answer which was not present in the excerpt the question was created using is present elsewhere in the other documents.
