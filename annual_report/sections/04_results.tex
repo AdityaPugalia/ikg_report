@@ -5,7 +5,7 @@ The system was evaluated on two benchmarks, FinanceBench and Multi-Doc-2025. Thi
 
 \subsection{FinanceBench}
 
-FinanceBench~\citep{islam2023financebench} has 150 questions over 84 filings and releases (12,013 pages), and each question names its company and period. The system is given only the question and chooses the document among all 84. The 52 questions whose gold answer is a bare number are scored in code: an answer is right when it is within tolerance of the gold or rounds to the gold's printed decimals. The 98 questions with text golds are judged by reading, question by question, on a four-point scale: C (matches the gold), P (partly matches), W (wrong, or a non-answer where the gold answers) and R (refused). Table~\ref{tab:fb} gives the results of the latest run.
+FinanceBench~\citep{islam2023financebench} has 150 questions over 84 filings and releases (12,013 pages), and each question names its company and period. The system is given only the question and chooses the document among all 84. The 52 questions whose gold answer is a bare number are scored in code: an answer is right when it is within tolerance of the gold or rounds to the gold's printed decimals. The 98 questions with text golds are judged by reading, question by question, on a four-point scale: C (matches the gold), P (predominantly matches), W (wrong, or a non-answer where the gold answers) and R (refused). Table~\ref{tab:fb} gives the results of the latest run.
 
 \begin{table}[h]
 \centering\small
@@ -19,13 +19,13 @@ numeric answers right (of 52) & \textbf{46 (88\%)} \\
 text answers C / P / W / R (of 98) & 64 / 14 / 17 / 3 \\
 refusals (of 150) & 4 \\
 overall (of 150) & \textbf{117 (78\%)} \\
-strict agreement with the gold as written (of 150) & 110 (73\%) \\
+overall with full marks for P (of 150) & 124 (82\%) \\
 model calls, total / median per question & 2,210 / 9 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-Table~\ref{tab:published} sets this run beside the results published on the same 150 questions. The systems were not graded in the same way, so the table says how each was graded. The benchmark's own baselines were hand-graded by its authors. PageIndex uses a judge model whose prompt accepts rounding, supersets and ``reasonable interpretations'', and it adjudicates twelve golds as wrong or ambiguous. Our numbers come from strict scoring in code and grading by hand, with refusals counted as wrong. The golds themselves are disputed in places: a public issue lists eleven~\citep{financebench_issue7}, and a third party found that the benchmark's dataset and results files disagree on 15 of 51 numeric golds, each by a factor of 100~\citep{tesseract2026verification}.
+Table~\ref{tab:published} sets this run beside the results published on the same 150 questions. The systems were not graded in the same way, so the table says how each was graded. The benchmark's own baselines were hand-graded by its authors. PageIndex uses a judge model whose prompt accepts rounding, supersets and ``reasonable interpretations'', and it adjudicates twelve golds as wrong or ambiguous. Our numbers come from strict scoring in code and grading by hand, with refusals counted as wrong. The golds themselves are not entirely reliable and 11 gold answers are disputed~\citep{financebench_issue7}. Accounting for this along with other reasonable judgment based alternatives for textual answers would lead to higher scores on the benchmark
 
 \begin{table}[h]
 \centering\footnotesize
@@ -52,23 +52,4 @@ this project, 7 Nov 2026 & 73\% / 78\% & strict agreement with the gold as writt
 
 \subsection{Multi-Doc-2025}
 
-Multi-Doc-2025~\citep{chen2026hcrag} has 2,327 questions over 179 10-K filings in five subsets, two of which need more than one document. The latest run, on 9 November 2026, used a sample of 151 test questions over 59 filings, 61 of them cross-document. The single-filing questions in this benchmark were generated from one excerpt and say ``the company'' without naming it, so each question is sent with its filings named in front. Table~\ref{tab:multidoc} gives the results.
-
-\begin{table}[h]
-\centering\small
-\caption{The latest run (9 November 2026) on a sample of 151 Multi-Doc-2025 test questions.}
-\label{tab:multidoc}
-\begin{tabular}{lr}
-\toprule
-measure & result \\
-\midrule
-refusals (of 151) & 0 \\
-numeric answers right against the gold as written (of 29) & 17 \\
-text answers C / P / W against the gold as written (of 122) & 60 / 47 / 15 (67\% with half credit) \\
-right under the rule adopted for this benchmark (of 151) & \textbf{124 (82\%)} \\
-\quad by subset & 80 / 70 / 93 / 90 / 71\% \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-Under the rule adopted for this benchmark, an answer is right when nothing in it is wrong and the facts that answer the question are present in the answer or its account. A gold that says the filing ``does not disclose'' something is overridden when our verified quote shows that it does. On reading, the gold is doubtful for 38 of the 122 text questions. The authors' word-overlap scorer gives our sentence answers an F1 of 23.3, against 60.2 in their paper, but that figure is for a different setting and generator, so the two are not comparable.
+Multi-Doc-2025~\citep{chen2026hcrag} has 2,327 questions over 179 10-K filings in five subsets, two of which need more than one document. The latest run gave an 82\% accuracy on the benchmark. The textual answers were judged correct when no incorrect information is mentioned  and the facts that answer the question are present in the answer or its account. A gold that says the filing ``does not disclose'' something is overridden when our verified quote shows that it does. This happens because the benchmark questions was created using excerpts. Hence, it is likely that an answer which was not present in the excerpt the question was created using is present elsewhere in the other documents.
