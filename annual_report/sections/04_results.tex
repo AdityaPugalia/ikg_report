@@ -1,97 +1,31 @@
 \section{Results}
 \label{sec:results}
 
-Every design change was made after a measurement, most of them on real filings with no model call. Four sets matter for judging the state of the work: the solver on textbook questions, the verification of the SEC relations, retrieval and reading on held-out filings, and the benchmark runs.
+The system was evaluated on two benchmarks, FinanceBench and Multi-Doc-2025. This section reports the latest run on each.
 
-\subsection{The solver and the graph}
+\subsection{FinanceBench}
 
-\begin{table}[h]
-\centering\footnotesize
-\caption{Left: the 32-question textbook benchmark (CAPM, Gordon growth, WACC, DuPont, bond pricing, Hamada, break-even; gold answers computed in code), solver only, no model calls. Right: representative relations verified against the SEC numeric data (five quarters, 4.6M consolidated values; the share of annual filings reporting all operands on which the relation holds within 0.5\%).}
-\label{tab:graph}
-\begin{minipage}[t]{0.46\textwidth}\vspace{0pt}
-\begin{tabular}{@{}p{58mm}r@{}}
-\toprule
-wording given to the solver & right \\
-\midrule
-the book's own (Aug) & 1/32 \\
-the book's, with token-overlap linking (Aug) & 1/32 \\
-the graph's own names (Aug) & 16/19 \\
-the graph's names, statistics as entities (Sep) & \textbf{19/19} \\
-the same after repairs and merges (Oct) & \textbf{19/19} \\
-\bottomrule
-\end{tabular}
-\end{minipage}\hfill
-\begin{minipage}[t]{0.52\textwidth}\vspace{0pt}
-\begin{tabular}{@{}>{\raggedright\arraybackslash}p{50mm}lr@{}}
-\toprule
-relation & kind & holds in \\
-\midrule
-assets $=$ liabilities $+$ equity & identity & 99.9\% \\
-gross profit $=$ revenue $-$ cost of sales & identity & 98.6\% \\
-cash roll-forward & identity & 98\% \\
-balance-sheet, cash-flow subtotals & aggregation & 91--97\% \\
-working-capital roll-forwards & empirical & 35--60\% \\
-pre-tax $=$ op.\ income $-$ interest $+$ other & \emph{refused} & 36\% \\
-treasury-stock roll-forward & \emph{dropped} & $\approx$50\% \\
-\bottomrule
-\end{tabular}
-\end{minipage}
-\end{table}
-
-Table~\ref{tab:graph} (left) separates the graph from the naming problem. The substrate was sound from the start: every law probed solved instantly once addressed by its graph name, and the three remaining failures, all CAPM, were cured by making statistics entities. Natural wording scored 1/32 even with fuzzy linking, because of 76 names probed only 5 had a single candidate entity (``present value'' competed with 21): naming is a \emph{disambiguation} problem, which is why the loop maps words to one entity by a model shown the definitions. Table~\ref{tab:graph} (right) is the evidence that the relations are true of real documents; the refusals are as informative as the admissions.
-
-\subsection{Retrieval and reading on held-out filings}
+FinanceBench~\citep{islam2023financebench} has 150 questions over 84 filings and releases (12,013 pages), and each question names its company and period. The system is given only the question and chooses the document among all 84. The 52 questions whose gold answer is a bare number are scored in code: an answer is right when it is within tolerance of the gold or rounds to the gold's printed decimals. The 98 questions with text golds are judged by reading, question by question, on a four-point scale: C (matches the gold), P (partly matches), W (wrong, or a non-answer where the gold answers) and R (refused). Table~\ref{tab:fb} gives the results of the latest run.
 
 \begin{table}[h]
 \centering\small
-\caption{Retrieval on 5,063 needs from 2025 EDGAR filings of companies excluded from training (3,985 printed, 1,078 not); the right chunk is known from the filing's own inline-XBRL tags. Recall@$k$: the labelled chunk is among the first $k$ served.}
-\label{tab:retrieval}
-\begin{tabular}{lrrrr}
-\toprule
- & recall@1 & recall@5 & MRR & ``not printed'' AUC \\
-\midrule
-learned scorer (v3), all signals & \textbf{0.596} & \textbf{0.882} & \textbf{0.721} & 0.817 \\
-\quad numeric needs / text needs & & 0.912 / 0.780 & & \\
-\quad without the meaning vector & 0.581 & 0.857 & 0.702 & 0.794 \\
-\quad without the bridge and part tag & 0.589 & 0.876 & 0.714 & 0.818 \\
-\quad words only & 0.535 & 0.806 & 0.654 & 0.801 \\
-hand-ordered search (v2), first call & & 0.704 & & \\
-hand-ordered search (v2), two calls & & 0.774 & & \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-The learned scorer puts the right chunk in the first five 88\% of the time against 70\% for the hand-ordered search (Table~\ref{tab:retrieval}). Words are indispensable, the meaning vector adds 2.5 points, the count of numbers printed is the largest single weight, and the bridge's share is significant but small, because it rarely separates chunks \emph{within} one document; its value is in deciding whether to search at all and where to start. The reader was measured the same way, 500 single reads with the finder's own prompt: shown the right chunk, the model cites the right cell 69\% of the time for a number (79\% counting the same value cited from another table) and 75--81\% for text; shown the wrong chunks, it still cites something 28\% of the time, a wrong value 12\%, and says ``absent'' twice in 300. These three calibrated numbers are what the planned stopping rule needs (Section~\ref{sec:next}).
-
-\subsection{FinanceBench: three full runs}
-
-FinanceBench~\citep{islam2023financebench} has 150 questions over 84 filings and releases (12,013 pages), each naming its company and period. The system is given the question only and chooses the document among all 84. The 52 bare-number golds are scored in code (within tolerance or rounding to the gold's printed decimals); the 98 text golds are judged by reading on a four-point scale (C matches, P partly, W wrong or a non-answer where the gold answers, R refused), question by question in a kept file. Table~\ref{tab:fb} gives the three runs.
-
-\begin{table}[h]
-\centering\small
-\caption{Three runs of the loop over all 150 FinanceBench questions. ``Overall'' counts a numeric hit as 1, C as 1, P as $\tfrac12$; refusals count as wrong everywhere.}
+\caption{The latest run (7 November 2026) over all 150 FinanceBench questions. ``Overall'' counts a numeric hit as 1, C as 1 and P as $\tfrac12$; refusals count as wrong everywhere.}
 \label{tab:fb}
-\begin{tabular}{l*{3}{>{\centering\arraybackslash}p{30mm}}}
+\begin{tabular}{lr}
 \toprule
- & 20 Oct 2026 & 2 Nov 2026 & 7 Nov 2026 \\
+measure & result \\
 \midrule
-what went in before the run & first full run & source graph, bridge, covers re-read & learned retriever, calibrations \\
-\midrule
-numeric right (of 52) & 31 (60\%) & 43 (83\%) & \textbf{46 (88\%)} \\
-text C / P / W / R (of 98) & --- & 51 / 11 / 25 / 11 & \textbf{64 / 14 / 17 / 3} \\
-refusals (of 150) & 10 & 12 & \textbf{4} \\
-overall (of 150) & --- & 99.5 (66\%) & \textbf{117 (78\%)} \\
-strict agreement with the gold as written & --- & 94 (63\%) & 110 (73\%) \\
-model calls, total / median per question & 2,791 / 12.5 & 2,275 / 9 & 2,210 / 9 \\
+numeric answers right (of 52) & \textbf{46 (88\%)} \\
+text answers C / P / W / R (of 98) & 64 / 14 / 17 / 3 \\
+refusals (of 150) & 4 \\
+overall (of 150) & \textbf{117 (78\%)} \\
+strict agreement with the gold as written (of 150) & 110 (73\%) \\
+model calls, total / median per question & 2,210 / 9 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-Each step went in for a measured reason and produced a measured gain: 17 of the first run's 21 numeric misses traced to six causes fixed in code (brackets read as negatives, a ratio returned $\times100$, a 10-Q's quarter read off the calendar month); the source graph and bridge took numeric accuracy from 60\% to 83\%; the learned retriever took it to 88\% and cut refusals from 12 to 4.
-
-\paragraph{Against published results.}
-Table~\ref{tab:published} sets the last run beside what has been published on the same 150 questions. The rulers differ and the table says how each graded. The benchmark's own baselines were hand-graded by its authors; PageIndex uses a judge model whose prompt accepts rounding, supersets and ``reasonable interpretations'' and adjudicates twelve golds as wrong or ambiguous; our numbers are strict code and hand grading with refusals counted wrong. On PageIndex's ruler applied by hand to the 2 November run we scored 70\%; the gap under any ruler is refusals and partial text answers (subsets of a list), not wrong numbers. The golds themselves are disputed in places: a public issue lists eleven~\citep{financebench_issue7}, and a third party found the benchmark's dataset and results files disagree on 15 of 51 numeric golds, each by a factor of 100~\citep{tesseract2026verification}.
+Table~\ref{tab:published} sets this run beside the results published on the same 150 questions. The systems were not graded in the same way, so the table says how each was graded. The benchmark's own baselines were hand-graded by its authors. PageIndex uses a judge model whose prompt accepts rounding, supersets and ``reasonable interpretations'', and it adjudicates twelve golds as wrong or ambiguous. Our numbers come from strict scoring in code and grading by hand, with refusals counted as wrong. The golds themselves are disputed in places: a public issue lists eleven~\citep{financebench_issue7}, and a third party found that the benchmark's dataset and results files disagree on 15 of 51 numeric golds, each by a factor of 100~\citep{tesseract2026verification}.
 
 \begin{table}[h]
 \centering\footnotesize
@@ -116,6 +50,25 @@ this project, 7 Nov 2026 & 73\% / 78\% & strict agreement with the gold as writt
 \end{tabular}
 \end{table}
 
-\subsection{Multi-Doc-2025: a first run}
+\subsection{Multi-Doc-2025}
 
-Multi-Doc-2025~\citep{chen2026hcrag} has 2,327 questions over 179 10-K filings in five subsets, two of them across documents. A sample of 151 test questions over 59 filings (61 cross-document) was run on 9 November. Its single-filing questions were generated from one excerpt and say ``the company'' without naming it, so each question is sent with its filings named in front. Result: 0 refusals; against the gold as written, 17 of 29 numeric right and text 60 C / 47 P / 15 W (67\% with half credit); under the rule adopted for this benchmark (an answer is right when nothing in it is wrong and the facts answering the question are present in the answer or its account; a gold saying the filing ``does not disclose'' something is overridden by our verified quote showing it does) \textbf{124 of 151 (82\%)}, by subset 80 / 70 / 93 / 90 / 71\%. The gold is doubtful on reading for 38 of the 122 text questions. The authors' word-overlap scorer gives our sentence answers F1 23.3 against their paper's 60.2 on a different setting and generator; the two are not comparable.
+Multi-Doc-2025~\citep{chen2026hcrag} has 2,327 questions over 179 10-K filings in five subsets, two of which need more than one document. The latest run, on 9 November 2026, used a sample of 151 test questions over 59 filings, 61 of them cross-document. The single-filing questions in this benchmark were generated from one excerpt and say ``the company'' without naming it, so each question is sent with its filings named in front. Table~\ref{tab:multidoc} gives the results.
+
+\begin{table}[h]
+\centering\small
+\caption{The latest run (9 November 2026) on a sample of 151 Multi-Doc-2025 test questions.}
+\label{tab:multidoc}
+\begin{tabular}{lr}
+\toprule
+measure & result \\
+\midrule
+refusals (of 151) & 0 \\
+numeric answers right against the gold as written (of 29) & 17 \\
+text answers C / P / W against the gold as written (of 122) & 60 / 47 / 15 (67\% with half credit) \\
+right under the rule adopted for this benchmark (of 151) & \textbf{124 (82\%)} \\
+\quad by subset & 80 / 70 / 93 / 90 / 71\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Under the rule adopted for this benchmark, an answer is right when nothing in it is wrong and the facts that answer the question are present in the answer or its account. A gold that says the filing ``does not disclose'' something is overridden when our verified quote shows that it does. On reading, the gold is doubtful for 38 of the 122 text questions. The authors' word-overlap scorer gives our sentence answers an F1 of 23.3, against 60.2 in their paper, but that figure is for a different setting and generator, so the two are not comparable.
